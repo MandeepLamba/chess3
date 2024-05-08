@@ -1,56 +1,182 @@
 import * as THREE from 'three';
 import './style.css';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import {reduceVertices} from "three/addons/utils/SceneUtils.js";
+import {PIECES} from './pieces.js';
+import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 
 const scene = new THREE.Scene();
 const canvas = document.querySelector('.webgl')
 
-scene.add(new THREE.AxesHelper(5))
+// scene.add(new THREE.AxesHelper(5))
 
 // Board Base
-const boardBaseGeo = new THREE.BoxGeometry( 17, 0.3, 17);
-const boardBaseMesh = new THREE.MeshBasicMaterial({
-    color: "#4b2424"
-}
+const boardBaseGeo = new THREE.BoxGeometry(17, 0.3, 17);
+const boardBaseMat = new THREE.MeshBasicMaterial({
+        color: "#4b2424"
+    }
 );
-const boardBase = new THREE.Mesh( boardBaseGeo, boardBaseMesh );
+const boardBase = new THREE.Mesh(boardBaseGeo, boardBaseMat);
 boardBase.position.set(0, -0.3, 0)
-scene.add( boardBase );
+scene.add(boardBase);
+
+// black pieces material
+const blackMat = new THREE.MeshStandardMaterial({
+    color: "#101010",
+    roughness: 0.4,
+    side: THREE.DoubleSide
+})
 
 
-// Pieces Loader
 const loader = new GLTFLoader();
+
+var pieces_map = {}
+
 loader.load(
     // resource URL
-    'assets/queen.glb',
+    'assets/all_glb/allin.glb',
     // called when the resource is loaded
-    function ( gltf ) {
+    function (gltf) {
+        gltf.scene.children.forEach((child) => {
+            console.log(child.name)
+            if (child.name.startsWith('elephant')) {
+                pieces_map[PIECES.WHITE.ROOK] = child
+                // change color and add for black
+                const black = child.clone()
+                black.material = blackMat
+                pieces_map[PIECES.BLACK.ROOK] = black
 
-        const child = gltf.scene.children[0];
-        child.castShadow = true
-        console.log(child)
-        // child.scale.set(5, 5, 5)
-        // child.position.set(3.5, 0.5, 1.4)
+            } else if (child.name.startsWith('horsh')) {
+                pieces_map[PIECES.WHITE.KNIGHT] = child
+                const black = child.clone()
+                black.material = blackMat
+                pieces_map[PIECES.BLACK.KNIGHT] = black
+            } else if (child.name.startsWith('chief')) {
+                pieces_map[PIECES.WHITE.BISHOP] = child
+                const black = child.clone()
+                black.material = blackMat
+                pieces_map[PIECES.BLACK.BISHOP] = black
+            } else if (child.name.startsWith('queen')) {
+                pieces_map[PIECES.WHITE.QUEEN] = child
+                const black = child.clone()
+                black.material = blackMat
+                pieces_map[PIECES.BLACK.QUEEN] = black
+            } else if (child.name.startsWith('king')) {
+                pieces_map[PIECES.WHITE.KING] = child
+                const black = child.clone()
+                black.material = blackMat
+                pieces_map[PIECES.BLACK.KING] = black
+            } else if (child.name.startsWith('soldier')) {
+                pieces_map[PIECES.WHITE.PAWN] = child
+                const black = child.clone()
+                black.material = blackMat
+                pieces_map[PIECES.BLACK.PAWN] = black
+            }
+        })
+        const rook1 = pieces_map[PIECES.WHITE.ROOK].clone()
+        rook1.position.set(-7, 0, 7)
+        rook1.scale.set(0.8, 0.8, 0.8)
+        scene.add(rook1)
+        const rook2 = pieces_map[PIECES.WHITE.ROOK].clone()
+        rook2.position.set(7, 0, 7)
+        rook2.scale.set(0.8, 0.8, 0.8)
+        scene.add(rook2)
 
-        scene.add(child);
+        const rook3 = pieces_map[PIECES.BLACK.ROOK].clone()
+        rook3.position.set(-7, 0, -7)
+        rook3.scale.set(0.8, 0.8, 0.8)
+        scene.add(rook3)
 
-        gltf.animations; // Array<THREE.AnimationClip>
-        gltf.scene; // THREE.Group
-        gltf.scenes; // Array<THREE.Group>
-        gltf.cameras; // Array<THREE.Camera>
-        gltf.asset; // Object
+        const rook4 = pieces_map[PIECES.BLACK.ROOK].clone()
+        rook4.position.set(7, 0, -7)
+        rook4.scale.set(0.8, 0.8, 0.8)
+        scene.add(rook4)
+
+        const knight1 = pieces_map[PIECES.WHITE.KNIGHT].clone()
+        knight1.position.set(-5, 0, 7)
+        knight1.scale.set(0.45, 0.45, 0.45)
+        scene.add(knight1)
+        const knight2 = pieces_map[PIECES.WHITE.KNIGHT].clone()
+        knight2.position.set(5, 0, 7)
+        knight2.scale.set(0.45, 0.45, 0.45)
+        scene.add(knight2)
+
+        const knight3 = pieces_map[PIECES.BLACK.KNIGHT].clone()
+        knight3.position.set(-5, 0, -7)
+        knight3.scale.set(0.45, 0.45, 0.45)
+        knight3.rotation.z = Math.PI
+        scene.add(knight3)
+
+        const knight4 = pieces_map[PIECES.BLACK.KNIGHT].clone()
+        knight4.position.set(5, 0, -7)
+        knight4.scale.set(0.45, 0.45, 0.45)
+        knight4.rotation.z = Math.PI
+        scene.add(knight4)
+
+        const bishop1 = pieces_map[PIECES.WHITE.BISHOP].clone()
+        bishop1.position.set(-3, 0, 7)
+        bishop1.scale.set(0.8, 0.8, 0.8)
+        scene.add(bishop1)
+        const bishop2 = pieces_map[PIECES.WHITE.BISHOP].clone()
+        bishop2.position.set(3, 0, 7)
+        bishop2.scale.set(0.8, 0.8, 0.8)
+        scene.add(bishop2)
+
+        const bishop3 = pieces_map[PIECES.BLACK.BISHOP].clone()
+        bishop3.position.set(-3, 0, -7)
+        bishop3.scale.set(0.8, 0.8, 0.8)
+        scene.add(bishop3)
+
+        const bishop4 = pieces_map[PIECES.BLACK.BISHOP].clone()
+        bishop4.position.set(3, 0, -7)
+        bishop4.scale.set(0.8, 0.8, 0.8)
+        scene.add(bishop4)
+
+        const king = pieces_map[PIECES.WHITE.KING].clone()
+        king.position.set(1, 0, 7)
+        king.scale.set(0.8, 0.8, 0.8)
+        scene.add(king)
+        const queen = pieces_map[PIECES.WHITE.QUEEN].clone()
+        queen.position.set(-1, 0, 7)
+        queen.scale.set(0.8, 0.8, 0.8)
+        queen.dropShadow = true
+        scene.add(queen)
+
+        const king2 = pieces_map[PIECES.BLACK.KING].clone()
+        king2.position.set(1, 0, -7)
+        king2.scale.set(0.8, 0.8, 0.8)
+        scene.add(king2)
+
+        const queen2 = pieces_map[PIECES.BLACK.QUEEN].clone()
+        queen2.position.set(-1, 0, -7)
+        queen2.scale.set(0.8, 0.8, 0.8)
+        scene.add(queen2)
+
+        for (let i = -7; i < 9; i += 2) {
+            const pawn = pieces_map[PIECES.WHITE.PAWN].clone()
+            pawn.position.set(i, 0, 5)
+            pawn.scale.set(0.8, 0.8, 0.8)
+            scene.add(pawn)
+
+        }
+        for (let i = -7; i < 9; i += 2) {
+            const pawn = pieces_map[PIECES.BLACK.PAWN].clone()
+            pawn.position.set(i, 0, -5)
+            pawn.scale.set(0.8, 0.8, 0.8)
+            scene.add(pawn)
+
+        }
+
 
     },
-    // called while loading is progressing
-    function ( xhr ) {
 
-        console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
+    // called while loading is progressing
+    function (xhr) {
+
+        console.log((xhr.loaded / xhr.total * 100) + '% loaded');
 
     },
     // called when loading has errors
-    function ( error ) {
+    function (error) {
 
         console.log('An error happened', error);
 
@@ -71,28 +197,28 @@ loader.load(
 // Board
 const colorDark = new THREE.MeshStandardMaterial({
     color: "#480000",
-    roughness: 0.3,
+    roughness: 0.4,
     side: THREE.DoubleSide
 })
 const colorLight = new THREE.MeshStandardMaterial({
     color: "#fff9f1",
-    roughness: 0,
+    roughness: 0.4,
     side: THREE.DoubleSide
 })
 
 function createSquare(x, y, color) {
     const geometry = new THREE.PlaneGeometry(2, 2)
     const plane = new THREE.Mesh(geometry, color)
-    plane.rotateX(Math.PI/2)
-    plane.position.set(x, 0,y)
+    plane.rotateX(Math.PI / 2)
+    plane.position.set(x, 0, y)
     return plane
 }
-for (let i = -7; i < 9; i+=2) {
-    for (let j = -7; j < 9; j+=2) {
-        console.log(i, j)
+
+for (let i = -7; i < 9; i += 2) {
+    for (let j = -7; j < 9; j += 2) {
         const box = createSquare(i, j, (i + j) % 4 === 0 ? colorDark : colorLight)
         box.receiveShadow = true
-        box.dropShadow = true
+        // box.dropShadow = true
         scene.add(box)
     }
 }
@@ -119,11 +245,20 @@ const sizes = {
 const light = new THREE.PointLight(0xffffff, 2000, 100)
 light.position.set(15, 15, 15)
 light.castShadow = true
-light.shadow.mapSize.width = 2048; ;// default
+light.shadow.mapSize.width = 2048;// default
 light.shadow.mapSize.height = 2048; // default
 light.shadow.camera.near = 0.5; // default
 // light.shadow.camera.far = 40;
 scene.add(light)
+
+const light2 = new THREE.PointLight(0xffffff, 2000, 100)
+light2.position.set(-15, 15, -15)
+light2.castShadow = true
+light2.shadow.mapSize.width = 2048;// default
+light2.shadow.mapSize.height = 2048; // default
+light2.shadow.camera.near = 0.5; // default
+// light.shadow.camera.far = 40;
+scene.add(light2)
 
 
 // const sun = new THREE.PointLight(0xffffff, 2000, 200)
@@ -149,7 +284,8 @@ const controls = new OrbitControls(camera, canvas)
 controls.enableDamping = true
 controls.enablePan = false
 // controls.enableZoom = false
-controls.autoRotate = true
+// controls.autoRotate = true
+controls.rotateSpeed = 1
 
 
 // Resize
