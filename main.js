@@ -14,18 +14,19 @@ import {GameManager} from "./game.js";
 const scene = new THREE.Scene();
 const canvas = document.querySelector('.webgl')
 const camera = createCamera()
-camera.position.set(12, 10, 20);
+camera.position.set(10, 20, 0);
 
 scene.add(
     getBoardGroup(),
     getBackgroundSphere(),
-    // new THREE.AxesHelper(25), // Axes helper
+    new THREE.AxesHelper(25), // Axes helper
 )
 
 
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
+let highlight = new THREE.Group()
 
 canvas.addEventListener('click', (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -34,9 +35,10 @@ canvas.addEventListener('click', (event) => {
     const intersects = raycaster.intersectObjects(scene.children, true);
     if (intersects.length > 0) {
         const object = intersects[0].object;
-        console.log(object)
-        // const plane = game.highlightPossibleMoves(object)
-        // scene.add(plane)
+        // console.log(object)
+        scene.remove(highlight)
+        highlight = game.highlightPossibleMoves(object)
+        scene.add(highlight)
     }
 });
 
@@ -70,7 +72,7 @@ controls.enablePan = false
 // controls.enableZoom = false
 controls.minZoom = 5
 controls.maxZoom = 6
-controls.autoRotate = true
+// controls.autoRotate = true
 controls.rotateSpeed = 1
 // controls.addEventListener('change', () => {
 //     console.log('change')
@@ -92,7 +94,7 @@ let start = Date.now()
 function animate() {
     counter++;
     if (Date.now() - start >= 1000) {
-        console.log(`${counter} FPS`);
+        // console.log(`${counter} FPS`);
         counter = 0; // reset the counter
         start = Date.now(); // update the start time
     }

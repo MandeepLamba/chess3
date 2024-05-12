@@ -34,6 +34,7 @@ export async function getPiecesMap() {
             case 'horsh__0': {
                 child.name = 'knight_w'
                 pieces_map[PIECES.WHITE.KNIGHT] = child
+                child.rotateZ(Math.PI/2)
                 child.scale.set(0.47, 0.47, 0.47)
                 const black = child.clone()
                 black.name = 'knight_b'

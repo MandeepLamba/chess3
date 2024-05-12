@@ -14,11 +14,12 @@ function getBoardBase() {
     return boardBase;
 }
 
-function createSquare(x, y, color) {
+function createSquare(x, y, name, color) {
     const geometry = new THREE.PlaneGeometry(2, 2)
     const plane = new THREE.Mesh(geometry, color)
     plane.rotateX(Math.PI / 2)
     plane.position.set(x, 0, y)
+    plane.name = name
     return plane
 }
 
@@ -29,7 +30,7 @@ export function getBoardGroup(){
     for (let i = -7; i < 9; i += 2) {
         for (let j = -7; j < 9; j += 2) {
             const box = createSquare(
-                i, j, (i + j) % 4 === 0 ? darkSquareMatirial : lightSquareMatirial
+                i, j, `square_${(i+7)/2}_${(j+7)/2}`,(i + j) % 4 === 0 ? darkSquareMatirial : lightSquareMatirial
             )
             box.receiveShadow = true
             board.add(box)
