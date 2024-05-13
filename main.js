@@ -1,176 +1,105 @@
 import * as THREE from 'three';
 import './style.css';
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import {reduceVertices} from "three/addons/utils/SceneUtils.js";
+import {
+    getBackgroundSphere,
+    getBoardGroup,
+    getLight,
+    createRenderer,
+    createCamera
+} from './items.js';
+import {getPiecesMap} from "./glb_manager.js";
+import {GameManager} from "./game.js";
 
 const scene = new THREE.Scene();
 const canvas = document.querySelector('.webgl')
+const camera = createCamera()
+camera.position.set(10, 20, 0);
 
-scene.add(new THREE.AxesHelper(5))
-
-// Board Base
-const boardBaseGeo = new THREE.BoxGeometry( 17, 0.3, 17);
-const boardBaseMesh = new THREE.MeshBasicMaterial({
-    color: "#4b2424"
-}
-);
-const boardBase = new THREE.Mesh( boardBaseGeo, boardBaseMesh );
-boardBase.position.set(0, -0.3, 0)
-scene.add( boardBase );
+scene.add(
+    getBoardGroup(),
+    getBackgroundSphere(),
+    new THREE.AxesHelper(25), // Axes helper
+)
 
 
-// Pieces Loader
-const loader = new GLTFLoader();
-loader.load(
-    // resource URL
-    'assets/queen.glb',
-    // called when the resource is loaded
-    function ( gltf ) {
 
-        const child = gltf.scene.children[0];
-        child.castShadow = true
-        console.log(child)
-        // child.scale.set(5, 5, 5)
-        // child.position.set(3.5, 0.5, 1.4)
+const raycaster = new THREE.Raycaster();
+const mouse = new THREE.Vector2();
+let highlight = new THREE.Group()
 
-        scene.add(child);
-
-        gltf.animations; // Array<THREE.AnimationClip>
-        gltf.scene; // THREE.Group
-        gltf.scenes; // Array<THREE.Group>
-        gltf.cameras; // Array<THREE.Camera>
-        gltf.asset; // Object
-
-    },
-    // called while loading is progressing
-    function ( xhr ) {
-
-        console.log( ( xhr.loaded / xhr.total * 100 ) + '% loaded' );
-
-    },
-    // called when loading has errors
-    function ( error ) {
-
-        console.log('An error happened', error);
-
+canvas.addEventListener('click', (event) => {
+    mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+    mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+    raycaster.setFromCamera(mouse, camera);
+    const intersects = raycaster.intersectObjects(scene.children, true);
+    if (intersects.length > 0) {
+        const object = intersects[0].object;
+        // console.log(object)
+        scene.remove(highlight)
+        highlight = game.highlightPossibleMoves(object)
+        scene.add(highlight)
     }
-);
-
-// Background
-// const backgroundTexture = new THREE.TextureLoader()
-//     .load('./background.jpg', (texture) =>
-//         texture.encoding = THREE.ReinhardToneMapping
-//     )
-// const sphereGeo = new THREE.SphereGeometry(100, 60, 60); // Adjust size as needed
-// const sphereMaterial = new THREE.MeshBasicMaterial({map: backgroundTexture, side: THREE.DoubleSide});
-// const sphere = new THREE.Mesh(sphereGeo, sphereMaterial);
-// scene.add(sphere);
+});
 
 
-// Board
-const colorDark = new THREE.MeshStandardMaterial({
-    color: "#480000",
-    roughness: 0.3,
-    side: THREE.DoubleSide
-})
-const colorLight = new THREE.MeshStandardMaterial({
-    color: "#fff9f1",
-    roughness: 0,
-    side: THREE.DoubleSide
-})
-
-function createSquare(x, y, color) {
-    const geometry = new THREE.PlaneGeometry(2, 2)
-    const plane = new THREE.Mesh(geometry, color)
-    plane.rotateX(Math.PI/2)
-    plane.position.set(x, 0,y)
-    return plane
-}
-for (let i = -7; i < 9; i+=2) {
-    for (let j = -7; j < 9; j+=2) {
-        console.log(i, j)
-        const box = createSquare(i, j, (i + j) % 4 === 0 ? colorDark : colorLight)
-        box.receiveShadow = true
-        box.dropShadow = true
-        scene.add(box)
-    }
-}
-
-// Ball
-const geometry = new THREE.SphereGeometry(50, 64, 64);
-const material = new THREE.MeshStandardMaterial({
-    color: "#00ff83",
-    roughness: 0.3,
-    side: THREE.DoubleSide
-})
-const mesh = new THREE.Mesh(geometry, material)
-scene.add(mesh)
 
 
-// Sizes
-const sizes = {
-    width: window.innerWidth,
-    height: window.innerHeight
-}
+const renderer = createRenderer(canvas)
+const pieces_map = await getPiecesMap()
+const game = GameManager.createGame(pieces_map)
+scene.add(game.updatePositions())
 
 
 // Lights
-const light = new THREE.PointLight(0xffffff, 2000, 100)
+const light = getLight()
 light.position.set(15, 15, 15)
-light.castShadow = true
-light.shadow.mapSize.width = 2048; ;// default
-light.shadow.mapSize.height = 2048; // default
-light.shadow.camera.near = 0.5; // default
-// light.shadow.camera.far = 40;
 scene.add(light)
 
+const light2 = getLight()
+light2.position.set(-15, 15, -15)
+scene.add(light2)
 
-// const sun = new THREE.PointLight(0xffffff, 2000, 200)
-// sun.position.set(0, 50, 80)
-// scene.add(sun)
+renderer.render(scene, camera);
 
-// Camera
-const camera = new THREE.PerspectiveCamera(45, sizes.width / sizes.height, 0.1, 300)
-camera.position.set(0, 10, 20);
-scene.add(camera)
-
-// Renderer
-const renderer = new THREE.WebGLRenderer({canvas})
-renderer.shadowMap.enabled = true
-renderer.shadowMap.type = THREE.PCFShadowMap;
-renderer.setSize(sizes.width, sizes.height)
-renderer.setPixelRatio(2)
-renderer.render(scene, camera)
 
 
 // Controls
 const controls = new OrbitControls(camera, canvas)
-controls.enableDamping = true
+// controls.enableDamping = true
+// controls.dampingFactor = 0.25
 controls.enablePan = false
 // controls.enableZoom = false
-controls.autoRotate = true
+controls.minZoom = 5
+controls.maxZoom = 6
+// controls.autoRotate = true
+controls.rotateSpeed = 1
+// controls.addEventListener('change', () => {
+//     console.log('change')
+//     renderer.render(scene, camera);
+// })
 
 
 // Resize
 window.addEventListener('resize', () => {
-    sizes.width = window.innerWidth
-    sizes.height = window.innerHeight
-
-    camera.aspect = sizes.width / sizes.height
+    camera.aspect = window.innerWidth / window.innerHeight
     camera.updateProjectionMatrix()
-
-    renderer.setSize(sizes.width, sizes.height)
+    renderer.setSize(window.innerWidth, window.innerHeight)
     renderer.render(scene, camera)
 })
 
+
+let counter = 0
+let start = Date.now()
 function animate() {
+    counter++;
+    if (Date.now() - start >= 1000) {
+        // console.log(`${counter} FPS`);
+        counter = 0; // reset the counter
+        start = Date.now(); // update the start time
+    }
     requestAnimationFrame(animate);
-
-    // Update controls
-    controls.update();
-
+    controls.update(); // add this line
     renderer.render(scene, camera);
 }
-
 animate();
