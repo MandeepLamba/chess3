@@ -1,6 +1,6 @@
 import {GLTFLoader} from "three/addons/loaders/GLTFLoader.js";
 import {PIECES} from './pieces.js';
-import {blackPieceMaterial} from "./materials.js";
+import {blackPieceMaterial, lightPieceMaterial} from "./materials.js";
 
 
 async function loadGlb(url = "assets/all_glb/allin.glb") {
@@ -19,6 +19,7 @@ export async function getPiecesMap() {
 
     gltf.scene.children.forEach((child) => {
         child.castShadow = true
+        child.material = lightPieceMaterial
         switch (child.name) {
             case 'elephant__0': {
                 child.name = 'rook_w'
