@@ -10,6 +10,7 @@ import {
 } from './items.js';
 import {getPiecesMap} from "./glb_manager.js";
 import {GameManager} from "./game.js";
+import {highlightMaterial} from "./materials.js";
 
 const scene = new THREE.Scene();
 const canvas = document.querySelector('.webgl')
@@ -19,14 +20,15 @@ camera.position.set(10, 20, 0);
 scene.add(
     getBoardGroup(),
     getBackgroundSphere(),
-    new THREE.AxesHelper(25), // Axes helper
+    // new THREE.AxesHelper(25), // Axes helper
 )
-
 
 
 const raycaster = new THREE.Raycaster();
 const mouse = new THREE.Vector2();
-let highlight = new THREE.Group()
+let highlight = new THREE.Group();
+let selectedPiece = null;
+let currentPositions = null;
 
 canvas.addEventListener('click', (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -35,20 +37,34 @@ canvas.addEventListener('click', (event) => {
     const intersects = raycaster.intersectObjects(scene.children, true);
     if (intersects.length > 0) {
         const object = intersects[0].object;
-        // console.log(object)
-        scene.remove(highlight)
-        highlight = game.highlightPossibleMoves(object)
-        scene.add(highlight)
+        if (object.material === highlightMaterial) {
+            console.log('clicked highlight:');
+
+            game.movePiece(
+                game.convertPositionToIndex(selectedPiece.position),
+                game.convertPositionToIndex(object.position),
+            )
+            scene.remove(currentPositions)
+            currentPositions = game.updatePositions()
+            scene.add(currentPositions)
+            scene.remove(highlight)
+        } else {
+            const loc = game.convertPositionToIndex(object.position)
+            selectedPiece = game.board[loc[0]][loc[1]];
+            console.log('selectedPiece: ', selectedPiece);
+            scene.remove(highlight)
+            highlight = game.highlightPossibleMoves(object)
+            scene.add(highlight)
+        }
     }
 });
-
-
 
 
 const renderer = createRenderer(canvas)
 const pieces_map = await getPiecesMap()
 const game = GameManager.createGame(pieces_map)
-scene.add(game.updatePositions())
+currentPositions = game.updatePositions()
+scene.add(currentPositions)
 
 
 // Lights
