@@ -51,7 +51,7 @@ canvas.addEventListener('click', (event) => {
         } else {
             const loc = game.convertPositionToIndex(object.position)
             selectedPiece = game.board[loc[0]][loc[1]];
-            console.log('selectedPiece: ', selectedPiece);
+            console.log('selectedPiece: ', selectedPiece.name);
             scene.remove(highlight)
             highlight = game.highlightPossibleMoves(object)
             scene.add(highlight)

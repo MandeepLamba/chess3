@@ -63,12 +63,12 @@ class Game {
         return group
     }
 
-    convertPositionToIndex(position){
+    convertPositionToIndex(position) {
         return [(position.x + 7) / 2, (position.z + 7) / 2]
     }
 
-    convertIndexToPosition(index){
-        return new THREE.Vector3((index[0] * 2) - 7,0, (index[1] * 2) - 7)
+    convertIndexToPosition(index) {
+        return new THREE.Vector3((index[0] * 2) - 7, 0, (index[1] * 2) - 7)
     }
 
     isValidMove(position) {
@@ -102,42 +102,63 @@ class Game {
                 item.position
             ]
         }
-        if (item.name.startsWith('pawn_w')) {
+        // clicked on other players piece
+        if (
+            item.material === blackPieceMaterial && this.currentPlayer === this.playerWhite ||
+            item.material === lightPieceMaterial && this.currentPlayer === this.playerBlack
+        ) {
+            return [item.position]
+        }
+
+        // pawn moves
+        if (item.name.startsWith('pawn')) {
             const board_index = this.convertPositionToIndex(item.position)
-            console.log("it's a white pawn at", board_index)
-            if (board_index[0] === 6) {
-                console.log('first move')
-                return [
-                    this.convertIndexToPosition([board_index[0] - 1, board_index[1]]),
-                    this.convertIndexToPosition([board_index[0] - 2, board_index[1]])
-                ]
+            let moves = []
+            if (item.material === lightPieceMaterial) {
+                console.log("it's a white pawn at", board_index)
+                if (this.board[board_index[0] - 1][board_index[1]] === null) {
+                    moves.push(this.convertIndexToPosition([board_index[0] - 1, board_index[1]]))
+                }
+                if (board_index[0] === 6 && this.board[board_index[0] - 2][board_index[1]] === null && this.board[board_index[0] - 1][board_index[1]] === null) {
+                    console.log('first move')
+                    moves.push(this.convertIndexToPosition([board_index[0] - 2, board_index[1]]))
+                }
+
+                // attack moves
+                if (this.isEnemyPiece(this.board[board_index[0] - 1][board_index[1] + 1])) {
+                    moves.push(this.convertIndexToPosition([board_index[0] - 1, board_index[1] + 1]))
+                }
+                if (this.isEnemyPiece(this.board[board_index[0] - 1][board_index[1] - 1])) {
+                    moves.push(this.convertIndexToPosition([board_index[0] - 1, board_index[1] - 1]))
+                }
             } else {
-                return [
-                    this.convertIndexToPosition([board_index[0] - 1, board_index[1]])
-                ]
+                console.log("it's a black pawn at", board_index)
+                if (this.board[board_index[0] + 1][board_index[1]] === null) {
+                    moves.push(this.convertIndexToPosition([board_index[0] + 1, board_index[1]]))
+                }
+                if (board_index[0] === 1 && this.board[board_index[0] + 2][board_index[1]] === null && this.board[board_index[0] + 1][board_index[1]] === null) {
+                    console.log('first move')
+                    moves.push(this.convertIndexToPosition([board_index[0] + 2, board_index[1]]))
+                }
+                //attack moves
+                if (this.isEnemyPiece(this.board[board_index[0] + 1][board_index[1] + 1])) {
+                    moves.push(this.convertIndexToPosition([board_index[0] + 1, board_index[1] + 1]))
+                }
+                if (this.isEnemyPiece(this.board[board_index[0] + 1][board_index[1] - 1])) {
+                    moves.push(this.convertIndexToPosition([board_index[0] + 1, board_index[1] - 1]))
+                }
             }
+            if (moves.length > 0) {
+                return moves
+            }
+            return [item.position]
             // TODO: add attack moves
         }
-        if (item.name.startsWith('pawn_b')) {
-            const board_index = this.convertPositionToIndex(item.position)
-            console.log("it's a black pawn at", board_index)
-            if (board_index[0] === 1) {
-                console.log('first move')
-                return [
-                    this.convertIndexToPosition([board_index[0] + 1, board_index[1]]),
-                    this.convertIndexToPosition([board_index[0] + 2, board_index[1]])
-                ]
-            } else {
-                return [
-                    this.convertIndexToPosition([board_index[0] + 1, board_index[1]])
-                ]
-            }
-            // TODO: add attack moves
-        }
+
+        // rook moves
         if (item.name.startsWith('rook')) {
             const board_index = this.convertPositionToIndex(item.position);
             const moves = [];
-
             const directions = [
                 [0, 1], // Right
                 [0, -1], // Left
@@ -147,26 +168,27 @@ class Game {
 
             directions.forEach(([dx, dy]) => {
                 let [x, y] = board_index;
-                while (true) {
+                while (
+                    this.isValidMove([x + dx, y + dy])
+                    && (this.board[x + dx][y + dy] === null
+                        || this.isEnemyPiece(this.board[x + dx][y + dy]
+                        ))) {
                     x += dx;
                     y += dy;
-                    const potentialMove = [x, y];
-                    if (this.isValidMove(potentialMove)) {
-                        const loc = this.convertIndexToPosition(potentialMove)
-                        if (this.board[x][y] === null) {
-                            moves.push(loc);
-                        } else if (this.isEnemyPiece(this.board[x][y])){
-                            moves.push(loc)
-                            break;
-                        }
-                    } else {
+                    moves.push(this.convertIndexToPosition([x, y]));
+                    if (this.isEnemyPiece(this.board[x][y])) {
+                        console.log('enemy piece encountered at', [x, y])
                         break;
                     }
                 }
             });
-
-            return moves;
+            if (moves.length > 0) {
+                return moves
+            }
+            return [item.position]
         }
+
+        // bishop moves
         if (item.name.startsWith('bishop')) {
             const board_index = this.convertPositionToIndex(item.position);
             const moves = [];
@@ -180,26 +202,24 @@ class Game {
 
             directions.forEach(([dx, dy]) => {
                 let [x, y] = board_index;
-                while (true) {
+                while (this.isValidMove([x + dx, y + dy])
+                && (this.board[x + dx][y + dy] === null
+                    || this.isEnemyPiece(this.board[x + dx][y + dy]))) {
                     x += dx;
                     y += dy;
-                    const potentialMove = [x, y];
-                    if (this.isValidMove(potentialMove)) {
-                        const piece = this.convertIndexToPosition(potentialMove);
-                        if (this.board[x][y] === null && !this.isEnemyPiece(piece)) {
-                            moves.push(piece);
-                        } else {
-                            break;
-                        }
-                    } else {
+                    moves.push(this.convertIndexToPosition([x, y]));
+                    if (this.isEnemyPiece(this.board[x][y])) {
                         break;
                     }
                 }
             });
-
-            return moves;
+            if (moves.length > 0) {
+                return moves
+            }
+            return [item.position]
         }
 
+        // knight moves
         if (item.name.startsWith('knight')) {
             const board_index = this.convertPositionToIndex(item.position);
             const moves = [];
@@ -212,17 +232,16 @@ class Game {
             knightMoves.forEach(([dx, dy]) => {
                 const [x, y] = board_index;
                 const potentialMove = [x + dx, y + dy];
-                if (this.isValidMove(potentialMove)) {
-                    const piece = this.convertIndexToPosition(potentialMove);
-                    if (this.board[potentialMove[0]][potentialMove[1]] === null || !this.isEnemyPiece(piece)) {
-                        moves.push(piece);
-                    }
+                if (this.isValidMove(potentialMove) &&
+                    (this.board[potentialMove[0]][potentialMove[1]] === null ||
+                        this.isEnemyPiece(this.board[potentialMove[0]][potentialMove[1]]))) {
+                    moves.push(this.convertIndexToPosition(potentialMove));
                 }
             });
-
             return moves;
         }
 
+        // queen moves
         if (item.name.startsWith('queen')) {
             const board_index = this.convertPositionToIndex(item.position);
             const moves = [];
@@ -234,27 +253,21 @@ class Game {
 
             directions.forEach(([dx, dy]) => {
                 let [x, y] = board_index;
-                while (true) {
+                while (this.isValidMove([x + dx, y + dy])
+                && (this.board[x + dx][y + dy] === null
+                    || this.isEnemyPiece(this.board[x + dx][y + dy]))) {
                     x += dx;
                     y += dy;
-                    const potentialMove = [x, y];
-                    if (this.isValidMove(potentialMove)) {
-                        const piece = this.convertIndexToPosition(potentialMove);
-                        if (this.board[x][y] === null || this.isEnemyPiece(piece)) {
-                            moves.push(piece);
-                            if (this.board[x][y] !== null) {
-                                break; // Stop if an enemy piece is encountered
-                            }
-                        } else {
-                            break;
-                        }
-                    } else {
-                        break;
+                    moves.push(this.convertIndexToPosition([x, y]));
+                    if (this.isEnemyPiece(this.board[x][y])) {
+                        break; // Stop if an enemy piece is encountered
                     }
                 }
             });
-
-            return moves;
+            if (moves.length > 0) {
+                return moves
+            }
+            return [item.position]
         }
         if (item.name.startsWith('king')) {
             const board_index = this.convertPositionToIndex(item.position);
@@ -268,16 +281,19 @@ class Game {
             kingMoves.forEach(([dx, dy]) => {
                 const [x, y] = board_index;
                 const potentialMove = [x + dx, y + dy];
-                if (this.isValidMove(potentialMove)) {
-                    const piece = this.convertIndexToPosition(potentialMove);
-                    if (this.board[potentialMove[0]][potentialMove[1]] === null || this.isEnemyPiece(piece)) {
-                        moves.push(piece);
-                    }
+                if (this.isValidMove(potentialMove)
+                    && (this.board[potentialMove[0]][potentialMove[1]] === null
+                        || this.isEnemyPiece(this.board[potentialMove[0]][potentialMove[1]]))) {
+                    moves.push(this.convertIndexToPosition(potentialMove));
                 }
             });
-            return moves;
-        }
 
+            // TODO: king can't move to checked location
+            if (moves.length > 0) {
+                return moves
+            }
+            return [item.position]
+        }
         return [
             item.position
         ]
