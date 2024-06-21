@@ -110,10 +110,11 @@ class Game {
             return [item.position]
         }
 
+        let moves = []
+
         // pawn moves
         if (item.name.startsWith('pawn')) {
             const board_index = this.convertPositionToIndex(item.position)
-            let moves = []
             if (item.material === lightPieceMaterial) {
                 console.log("it's a white pawn at", board_index)
                 if (this.board[board_index[0] - 1][board_index[1]] === null) {
@@ -148,24 +149,28 @@ class Game {
                     moves.push(this.convertIndexToPosition([board_index[0] + 1, board_index[1] - 1]))
                 }
             }
-            if (moves.length > 0) {
-                return moves
-            }
-            return [item.position]
-            // TODO: add attack moves
         }
 
         // rook moves
-        if (item.name.startsWith('rook')) {
+        if (item.name.startsWith('rook') || item.name.startsWith('queen') || item.name.startsWith('bishop')) {
             const board_index = this.convertPositionToIndex(item.position);
-            const moves = [];
-            const directions = [
-                [0, 1], // Right
-                [0, -1], // Left
-                [1, 0], // Up
-                [-1, 0] // Down
-            ];
-
+            let directions = [];
+            if (item.name.startsWith('rook') || item.name.startsWith('queen')) {
+                directions.push(
+                    [0, 1], // Right
+                    [0, -1], // Left
+                    [1, 0], // Up
+                    [-1, 0] // Down
+                )
+            }
+            if (item.name.startsWith('bishop') || item.name.startsWith('queen')) {
+                directions.push(
+                    [1, 1], // Up-Right
+                    [1, -1], // Down-Right
+                    [-1, 1], // Up-Left
+                    [-1, -1] // Down-Left
+                );
+            }
             directions.forEach(([dx, dy]) => {
                 let [x, y] = board_index;
                 while (
@@ -182,47 +187,11 @@ class Game {
                     }
                 }
             });
-            if (moves.length > 0) {
-                return moves
-            }
-            return [item.position]
-        }
-
-        // bishop moves
-        if (item.name.startsWith('bishop')) {
-            const board_index = this.convertPositionToIndex(item.position);
-            const moves = [];
-
-            const directions = [
-                [1, 1], // Up-Right
-                [1, -1], // Down-Right
-                [-1, 1], // Up-Left
-                [-1, -1] // Down-Left
-            ];
-
-            directions.forEach(([dx, dy]) => {
-                let [x, y] = board_index;
-                while (this.isValidMove([x + dx, y + dy])
-                && (this.board[x + dx][y + dy] === null
-                    || this.isEnemyPiece(this.board[x + dx][y + dy]))) {
-                    x += dx;
-                    y += dy;
-                    moves.push(this.convertIndexToPosition([x, y]));
-                    if (this.isEnemyPiece(this.board[x][y])) {
-                        break;
-                    }
-                }
-            });
-            if (moves.length > 0) {
-                return moves
-            }
-            return [item.position]
         }
 
         // knight moves
         if (item.name.startsWith('knight')) {
             const board_index = this.convertPositionToIndex(item.position);
-            const moves = [];
 
             const knightMoves = [
                 [-2, -1], [-1, -2], [1, -2], [2, -1], // Up-Left
@@ -238,41 +207,11 @@ class Game {
                     moves.push(this.convertIndexToPosition(potentialMove));
                 }
             });
-            return moves;
         }
 
-        // queen moves
-        if (item.name.startsWith('queen')) {
-            const board_index = this.convertPositionToIndex(item.position);
-            const moves = [];
-
-            const directions = [
-                [0, 1], [0, -1], [1, 0], [-1, 0], // Rook moves
-                [1, 1], [1, -1], [-1, 1], [-1, -1] // Bishop moves
-            ];
-
-            directions.forEach(([dx, dy]) => {
-                let [x, y] = board_index;
-                while (this.isValidMove([x + dx, y + dy])
-                && (this.board[x + dx][y + dy] === null
-                    || this.isEnemyPiece(this.board[x + dx][y + dy]))) {
-                    x += dx;
-                    y += dy;
-                    moves.push(this.convertIndexToPosition([x, y]));
-                    if (this.isEnemyPiece(this.board[x][y])) {
-                        break; // Stop if an enemy piece is encountered
-                    }
-                }
-            });
-            if (moves.length > 0) {
-                return moves
-            }
-            return [item.position]
-        }
+        // king moves
         if (item.name.startsWith('king')) {
             const board_index = this.convertPositionToIndex(item.position);
-            const moves = [];
-
             const kingMoves = [
                 [0, 1], [0, -1], [1, 0], [-1, 0], // Horizontal and Vertical
                 [1, 1], [1, -1], [-1, 1], [-1, -1] // Diagonal
@@ -289,14 +228,11 @@ class Game {
             });
 
             // TODO: king can't move to checked location
-            if (moves.length > 0) {
-                return moves
-            }
-            return [item.position]
         }
-        return [
-            item.position
-        ]
+        if (moves.length > 0) {
+            return moves
+        }
+        return [item.position]
 
     }
 
