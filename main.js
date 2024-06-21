@@ -11,11 +11,12 @@ import {
 import {getPiecesMap} from "./glb_manager.js";
 import {GameManager} from "./game.js";
 import {highlightMaterial} from "./materials.js";
+import TWEEN from '@tweenjs/tween.js';
 
 const scene = new THREE.Scene();
 const canvas = document.querySelector('.webgl')
 const camera = createCamera()
-camera.position.set(10, 20, 0);
+camera.position.set(13, 20, 3);
 
 scene.add(
     getBoardGroup(),
@@ -29,6 +30,20 @@ const mouse = new THREE.Vector2();
 let highlight = new THREE.Group();
 let selectedPiece = null;
 let currentPositions = null;
+
+function animateCamera(duration) {
+    const fromPosition = camera.position.clone();
+
+    const to = new THREE.Vector3(fromPosition.x * -1, fromPosition.y, fromPosition.z);
+
+    const tween = new TWEEN.Tween(fromPosition)
+        .to(to, duration)
+        .easing(TWEEN.Easing.Quadratic.InOut)
+        .onUpdate(() => {
+            camera.position.set(fromPosition.x, fromPosition.y, fromPosition.z);
+        })
+        .start();
+}
 
 canvas.addEventListener('click', (event) => {
     mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
@@ -44,6 +59,11 @@ canvas.addEventListener('click', (event) => {
                 game.convertPositionToIndex(selectedPiece.position),
                 game.convertPositionToIndex(object.position),
             )
+            // toggle player
+            game.togglePlayer()
+
+            animateCamera(2000);
+
             scene.remove(currentPositions)
             currentPositions = game.updatePositions()
             scene.add(currentPositions)
@@ -85,11 +105,12 @@ const controls = new OrbitControls(camera, canvas)
 // controls.enableDamping = true
 // controls.dampingFactor = 0.25
 controls.enablePan = false
-// controls.enableZoom = false
+controls.enableZoom = false
 controls.minZoom = 5
 controls.maxZoom = 6
+controls.enableRotate = false
 // controls.autoRotate = true
-controls.rotateSpeed = 1
+// controls.rotateSpeed = 1
 // controls.addEventListener('change', () => {
 //     console.log('change')
 //     renderer.render(scene, camera);
@@ -115,6 +136,7 @@ function animate() {
         start = Date.now(); // update the start time
     }
     requestAnimationFrame(animate);
+    TWEEN.update();
     controls.update(); // add this line
     renderer.render(scene, camera);
 }

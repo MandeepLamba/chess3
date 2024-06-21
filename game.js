@@ -181,10 +181,8 @@ class Game {
                     x += dx;
                     y += dy;
                     moves.push(this.convertIndexToPosition([x, y]));
-                    if (this.isEnemyPiece(this.board[x][y])) {
-                        console.log('enemy piece encountered at', [x, y])
-                        break;
-                    }
+                    // Stop if enemy piece is encountered
+                    if (this.isEnemyPiece(this.board[x][y])) break;
                 }
             });
         }
@@ -223,11 +221,11 @@ class Game {
                 if (this.isValidMove(potentialMove)
                     && (this.board[potentialMove[0]][potentialMove[1]] === null
                         || this.isEnemyPiece(this.board[potentialMove[0]][potentialMove[1]]))) {
+                    // TODO: king can't move to checked location
                     moves.push(this.convertIndexToPosition(potentialMove));
                 }
             });
 
-            // TODO: king can't move to checked location
         }
         if (moves.length > 0) {
             return moves
@@ -253,5 +251,9 @@ class Game {
     movePiece(from, to) {
         this.board[to[0]][to[1]] = this.board[from[0]][from[1]]
         this.board[from[0]][from[1]] = null
+    }
+
+    togglePlayer() {
+        this.currentPlayer = this.currentPlayer === this.playerWhite ? this.playerBlack : this.playerWhite;
     }
 }
